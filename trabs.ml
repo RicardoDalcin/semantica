@@ -149,25 +149,52 @@ let rec eval (e: expr) gamma =
             | OpEqual -> ExBool (n1 = n2)
             | OpLorE -> ExBool (n1 <= n2)
             | OpLess -> ExBool (n1 < n2)
-            | OpAnd -> ExBool (n1 && n2)
-            | OpOr -> ExBool (n1 || n2))
+            | _ -> raise (NoRuleApplies "eval: operation"))
+       | (ExBool (b1), ExBool (b2)) ->
+           (match op with
+            | OpAnd -> ExBool (b1 && b2)
+            | OpOr -> ExBool (b1 || b2)
+            | OpEqual -> ExBool (b1 = b2)
+            | _ -> raise (NoRuleApplies "eval: operation"))
        | _ -> raise (NoRuleApplies "eval: operation"))
-  | ExApplication -> raise (NotImplemented "eval: application")
-  | ExFunction -> raise (NotImplemented "eval: function")
-  | ExLet -> raise (NotImplemented "eval: let")
-  | ExLetRec -> raise (NotImplemented "eval: let rec")
-  | ExPair -> raise (NotImplemented "eval: pair")
-  | ExFst -> raise (NotImplemented "eval: fst")
-  | ExSnd -> raise (NotImplemented "eval: snd")
-  | ExNil -> raise (NotImplemented "eval: nil")
-  | ExList -> raise (NotImplemented "eval: list")
-  | ExHd -> raise (NotImplemented "eval: hd")
-  | ExTl -> raise (NotImplemented "eval: tl")
-  | ExMatchL -> raise (NotImplemented "eval: matchL")
-  | ExJust -> raise (NotImplemented "eval: just")
-  | ExNothing -> raise (NotImplemented "eval: nothing")
-  | ExMatchM -> raise (NotImplemented "eval: matchM")
-  | _ -> raise (NoRuleApplies "eval: default")
+  | ExApplication (e1, e2) -> raise (NotImplemented "eval: application")
+  | ExFunction (x, fTy, e1) -> raise (NotImplemented "eval: function")
+  | ExLet (x, fTy, e1, e2) -> raise (NotImplemented "eval: let")
+  | ExLetRec (var1, ty1, ty2, var2, ty3, e1, e2) -> raise (NotImplemented "eval: letrec")
+  | ExPair (e1, e2) ->
+      let v1 = eval e1 gamma in
+      let v2 = eval e2 gamma in
+      ExPair (v1, v2)
+  | ExFst (e) ->
+      let v = eval e gamma in
+      (match v with
+       | ExPair (v1, v2) -> v1
+       | _ -> raise (NoRuleApplies "eval: fst"))
+  | ExSnd (e) ->
+      let v = eval e gamma in
+      (match v with
+       | ExPair (v1, v2) -> v2
+       | _ -> raise (NoRuleApplies "eval: snd"))
+  | ExNil (ty) ->
+      ExNil (ty)
+  | ExList (e1, e2) -> 
+      let v1 = eval e1 gamma in
+      let v2 = eval e2 gamma in
+      ExList (v1, v2)
+  | ExHd (e) ->
+      let v = eval e gamma in
+      (match v with
+       | ExList (v1, v2) -> v1
+       | _ -> raise (NoRuleApplies "eval: hd"))
+  | ExTl (e) -> 
+      let v = eval e gamma in
+      (match v with
+       | ExList (v1, v2) -> v2
+       | _ -> raise (NoRuleApplies "eval: tl"))
+  | ExMatchL (e1, e2, x, xs, e3) -> raise (NotImplemented "eval: matchL")
+  | ExJust (e) -> raise (NotImplemented "eval: just")
+  | ExNothing (ty) -> raise (NotImplemented "eval: nothing")
+  | ExMatchM (e1, e2, x, e3) -> raise (NotImplemented "eval: matchM")
 
 let hashTable = (Hashtbl.create 1)
 let test1 = ExNil Bool
@@ -184,4 +211,26 @@ let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
 let bad2 = ExApplication (test5, test3)
 let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
 
-let testEval1 = eval (test1) hashTable
+let testIf = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10))
+let testOperation = ExOperation (OpPlus, (ExNumber 5), (ExNumber 10))
+let testPair = ExPair (testIf, (ExNumber 10))
+let testFst = ExFst testPair
+let testSnd = ExSnd testPair
+let testList = ExList ((ExNumber 5), (ExList ((ExNumber 6), ExNil Int)))
+let testHd = ExHd testList
+let testTl = ExTl testList
+let testBoolOperation1 = ExOperation (OpAnd, ExBool true, ExBool false)
+let testBoolOperation2 = ExOperation (OpOr, ExBool true, ExBool false)
+let testBoolOperation3 = ExOperation (OpEqual, ExBool false, ExBool false)
+
+let testEvalIf = eval testIf (Hashtbl.create 1)
+let testEvalOperation = eval testOperation (Hashtbl.create 1)
+let testEvalPair = eval testPair (Hashtbl.create 1)
+let testEvalFst = eval testFst (Hashtbl.create 1)
+let testEvalSnd = eval testSnd (Hashtbl.create 1)
+let testEvalList = eval testList (Hashtbl.create 1)
+let testEvalHd = eval testHd (Hashtbl.create 1)
+let testEvalTl = eval testTl (Hashtbl.create 1)
+let testEvalBoolOperation1 = eval testBoolOperation1 (Hashtbl.create 1)
+let testEvalBoolOperation2 = eval testBoolOperation2 (Hashtbl.create 1)
+let testEvalBoolOperation3 = eval testBoolOperation3 (Hashtbl.create 1)
