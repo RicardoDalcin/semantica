@@ -23,22 +23,22 @@ type operator =
   | OpOr
 
 type expr =
-    ExBool of bool (* foi *)
-  | ExNumber of int (* foi *)
-  | ExIf of expr * expr * expr (* foi *)
-  | ExVar of var (* foi *)
+    ExBool of bool
+  | ExNumber of int
+  | ExIf of expr * expr * expr
+  | ExVar of var
   | ExOperation of operator * expr * expr
-  | ExApplication of expr * expr (* foi *)
-  | ExFunction of var * typeL1 * expr (* foi *)
+  | ExApplication of expr * expr
+  | ExFunction of var * typeL1 * expr
   | ExLet of var * typeL1 * expr * expr
   | ExLetRec of var * typeL1 * typeL1 * var * typeL1 * expr * expr
   | ExPair of expr * expr
   | ExFst of expr
   | ExSnd of expr
-  | ExNil of typeL1 (* foi *)
-  | ExList of expr * expr (* foi *)
-  | ExHd of expr (* foi *)
-  | ExTl of expr (* foi *)
+  | ExNil of typeL1
+  | ExList of expr * expr
+  | ExHd of expr
+  | ExTl of expr
   | ExMatchL of expr * expr * var * var * expr
   | ExJust of expr
   | ExNothing of typeL1
@@ -280,6 +280,21 @@ let rec typeCheck (e:expr) gamma =
            let ty2 = typeCheck e2 gamma in
            Hashtbl.add gamma x tyL;
            Hashtbl.add gamma xs (TyList tyL);
+           let ty3 = typeCheck e3 gamma in
+           (match (ty2, ty3) with
+            | (Some ty4, Some ty5) ->
+                if (compareType ty4 ty5) 
+                then Some ty5 
+                else None
+            | (_,_) -> None)
+       | _ -> None
+      )
+  | ExMatchM (e1, e2, x, e3)  ->
+      let ty1 = typeCheck e1 gamma in
+      (match (ty1) with
+       | (Some TyMaybe tyM) -> 
+           let ty2 = typeCheck e2 gamma in
+           Hashtbl.add gamma x tyM;
            let ty3 = typeCheck e3 gamma in
            (match (ty2, ty3) with
             | (Some ty4, Some ty5) ->
