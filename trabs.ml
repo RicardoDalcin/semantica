@@ -113,8 +113,184 @@ let rec typeCheck (e:expr) gamma =
       (match (ty1) with
        | (Some (TyList ty2)) -> ty1
        | _ -> None)
+  | ExOperation (OpPlus,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Int
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpMinus,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Int
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpTimes,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Int
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpDiv,e1,e2)     ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Int
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpGreater,e1,e2) ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpGorE,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpEqual,e1,e2)   ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Bool
+           else if ty3 = Bool && ty4 = Bool then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpLorE,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpLess,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Int && ty4 = Int then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExOperation (OpAnd,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) ->
+           if ty3 = Bool && ty4 = Bool then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExLet (x,tyF,e1,e2)   ->
+      let ty1 = typeCheck e1 gamma in
+      Hashtbl.add gamma x tyF;
+      let ty2 = typeCheck e2 gamma in
+      let t = (match (ty1,ty2) with
+          | (Some ty3, Some ty4) -> 
+              if compareType ty3 tyF 
+              then Some ty4 
+              else None
+          | _ -> None) in
+      Hashtbl.remove gamma x;
+      t
+  | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) 
+    when compareType tyInF ty1  ->
+      Hashtbl.add gamma x (TyFun (tyInF,tyOutF));
+      let ty2 = typeCheck e2 gamma in
+      Hashtbl.add gamma y ty1;
+      let ty1 = typeCheck e1 gamma in
+      let t = (match (ty1,ty2) with
+          | (Some ty3, Some ty4) when compareType ty3 tyOutF -> Some ty4
+          | (Some ty3, Some ty4) -> None
+          | _ -> None) in
+      Hashtbl.remove gamma y;
+      Hashtbl.remove gamma x;
+      t
+  | ExPair (e1, e2)               ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+       | (Some ty3, Some ty4) -> Some (TyPair (ty3, ty4))
+       | (None,_) -> None
+       | (_,None) -> None)
+  | ExFst (e1)                    ->
+      let ty1 = typeCheck e1 gamma in
+      (match (ty1) with
+       | (Some (TyPair (ty2, ty3))) -> Some ty2
+       | _ -> None)
+  | ExSnd (e1)                    ->
+      let ty1 = typeCheck e1 gamma in
+      (match (ty1) with
+       | (Some (TyPair (ty2, ty3))) -> Some ty3
+       | _ -> None)
+  | ExJust (e1)                   ->
+      let ty1 = typeCheck e1 gamma in
+      (match (ty1) with
+       | (Some ty1) -> Some (TyMaybe ty1) 
+       | None -> None)
+  | ExNothing (ty)                -> Some (TyMaybe ty)
+  | ExMatchL (e1, e2, x, xs, e3)  ->
+      let ty1 = typeCheck e1 gamma in
+      (match (ty1) with
+       | (Some TyList tyL) -> 
+           let ty2 = typeCheck e2 gamma in
+           Hashtbl.add gamma x tyL;
+           Hashtbl.add gamma xs (TyList tyL);
+           let ty3 = typeCheck e3 gamma in
+           (match (ty2, ty3) with
+            | (Some ty4, Some ty5) ->
+                if (compareType ty4 ty5) 
+                then Some ty5 
+                else None
+            | (_,_) -> None)
+       | _ -> None
+      )
   | _                             -> None
-  
+
 exception NoRuleApplies of string
 exception NotImplemented of string
 
@@ -196,20 +372,53 @@ let rec eval (e: expr) gamma =
   | ExNothing (ty) -> raise (NotImplemented "eval: nothing")
   | ExMatchM (e1, e2, x, e3) -> raise (NotImplemented "eval: matchM")
 
-let hashTable = (Hashtbl.create 1)
-let test1 = ExNil Bool
-let test2 = ExNumber 5
-let test3 = ExBool true
-let test4 = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10)) 
-let test5 = (ExFunction ("x", Int, (ExBool true)))
-let test6 = ExApplication (test5, test2)
-let test7 = ExList ((ExNumber 5), (ExList ((ExNumber 6), ExNil Int)))
-let test8 = ExHd test7
-let test9 = ExTl test7
+  let hashTable = (Hashtbl.create 1)
+  let test1 = ExNil Bool
+  let test2 = ExNumber 5
+  let test3 = ExBool true
+  let test4 = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10)) 
+  let test5 = (ExFunction ("x", Int, (ExBool true)))
+  let test6 = ExApplication (test5, test2)
+  let test7 = ExList ((ExNumber 5), (ExList ((ExNumber 6), ExNil Int)))
+  let test8 = ExHd test7
+  let test9 = ExTl test7
+  let test10 = ExOperation (OpPlus, test2, test2)
+  let test11 = ExOperation (OpEqual, test2, test2)
+  let test12 = ExOperation (OpEqual, test3, test3)
+  let test13 = ExLet ("x", Int, test2, ExVar("x"))
+  let test14 = ExLet ("x", Int, test2, ExOperation (OpEqual, ExVar("x"), test2))
+  let test15 = ExLetRec("sum",
+                        Int,Int,
+                        "y",
+                        Int,
+                        ExIf(ExOperation (OpGorE, ExVar "y" , ExNumber 0),
+                             ExOperation (OpPlus,(ExVar "y"), ExApplication(ExVar "sum", ExOperation(OpMinus,ExVar "y", ExNumber 1))),
+                             ExNumber 0 ),
+                        ExApplication(ExVar "sum", ExNumber 5));;
+  let test16 = ExPair (test2, test7)
+  let test17 = ExFst test16
+  let test18 = ExSnd test16
+  let test19 = ExLetRec (("soma"),
+                         (TyList Int), Int, 
+                         ("l"), 
+                         (TyList Int), 
+                         (ExMatchL ((ExVar "l"), 
+                                    (ExNumber 0), 
+                                    ("x"), 
+                                    ("xs"), 
+                                    ExOperation (OpPlus, 
+                                                 (ExVar "x"), 
+                                                 ExApplication ((ExVar "soma"), (ExVar "xs"))
+                                                )
+                                   )),
+                         (ExApplication ((ExVar "soma"), test7))
+                        )
     
-let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
-let bad2 = ExApplication (test5, test3)
-let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
+      
+  let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
+  let bad2 = ExApplication (test5, test3)
+  let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
+  let bad4 = ExOperation (OpEqual, test2, test3)
 
 let testIf = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10))
 let testOperation = ExOperation (OpPlus, (ExNumber 5), (ExNumber 10))
