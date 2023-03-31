@@ -387,53 +387,62 @@ let rec eval (e: expr) gamma =
   | ExNothing (ty) -> raise (NotImplemented "eval: nothing")
   | ExMatchM (e1, e2, x, e3) -> raise (NotImplemented "eval: matchM")
 
-  let hashTable = (Hashtbl.create 1)
-  let test1 = ExNil Bool
-  let test2 = ExNumber 5
-  let test3 = ExBool true
-  let test4 = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10)) 
-  let test5 = (ExFunction ("x", Int, (ExBool true)))
-  let test6 = ExApplication (test5, test2)
-  let test7 = ExList ((ExNumber 5), (ExList ((ExNumber 6), ExNil Int)))
-  let test8 = ExHd test7
-  let test9 = ExTl test7
-  let test10 = ExOperation (OpPlus, test2, test2)
-  let test11 = ExOperation (OpEqual, test2, test2)
-  let test12 = ExOperation (OpEqual, test3, test3)
-  let test13 = ExLet ("x", Int, test2, ExVar("x"))
-  let test14 = ExLet ("x", Int, test2, ExOperation (OpEqual, ExVar("x"), test2))
-  let test15 = ExLetRec("sum",
-                        Int,Int,
-                        "y",
-                        Int,
-                        ExIf(ExOperation (OpGorE, ExVar "y" , ExNumber 0),
-                             ExOperation (OpPlus,(ExVar "y"), ExApplication(ExVar "sum", ExOperation(OpMinus,ExVar "y", ExNumber 1))),
-                             ExNumber 0 ),
-                        ExApplication(ExVar "sum", ExNumber 5));;
-  let test16 = ExPair (test2, test7)
-  let test17 = ExFst test16
-  let test18 = ExSnd test16
-  let test19 = ExLetRec (("soma"),
-                         (TyList Int), Int, 
-                         ("l"), 
-                         (TyList Int), 
-                         (ExMatchL ((ExVar "l"), 
-                                    (ExNumber 0), 
-                                    ("x"), 
-                                    ("xs"), 
-                                    ExOperation (OpPlus, 
-                                                 (ExVar "x"), 
-                                                 ExApplication ((ExVar "soma"), (ExVar "xs"))
-                                                )
-                                   )),
-                         (ExApplication ((ExVar "soma"), test7))
-                        )
+let hashTable = (Hashtbl.create 1)
+let test1 = ExNil Bool
+let test2 = ExNumber 5
+let test3 = ExBool true
+let test4 = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10)) 
+let test5 = (ExFunction ("x", Int, (ExBool true)))
+let test6 = ExApplication (test5, test2)
+let test7 = ExList ((ExNumber 5), (ExList ((ExNumber 6), ExNil Int)))
+let test8 = ExHd test7
+let test9 = ExTl test7
+let test10 = ExOperation (OpPlus, test2, test2)
+let test11 = ExOperation (OpEqual, test2, test2)
+let test12 = ExOperation (OpEqual, test3, test3)
+let test13 = ExLet ("x", Int, test2, ExVar("x"))
+let test14 = ExLet ("x", Int, test2, ExOperation (OpEqual, ExVar("x"), test2))
+let test15 = ExLetRec("sum",
+                      Int,Int,
+                      "y",
+                      Int,
+                      ExIf(ExOperation (OpGorE, ExVar "y" , ExNumber 0),
+                           ExOperation (OpPlus,(ExVar "y"), ExApplication(ExVar "sum", ExOperation(OpMinus,ExVar "y", ExNumber 1))),
+                           ExNumber 0 ),
+                      ExApplication(ExVar "sum", ExNumber 5));;
+let test16 = ExPair (test2, test7)
+let test17 = ExFst test16
+let test18 = ExSnd test16
+let test19 = ExLetRec (("soma"),
+                       (TyList Int), Int, 
+                       ("l"), 
+                       (TyList Int), 
+                       (ExMatchL ((ExVar "l"), 
+                                  (ExNumber 0), 
+                                  ("x"), 
+                                  ("xs"), 
+                                  ExOperation (OpPlus, 
+                                               (ExVar "x"), 
+                                               ExApplication ((ExVar "soma"), (ExVar "xs"))
+                                              )
+                                 )),
+                       (ExApplication ((ExVar "soma"), test7))
+                      )
+let test20 = ExMatchM ((ExJust (ExNumber 5)), 
+                       (ExBool false), 
+                       "x", 
+                       (ExOperation (OpEqual, 
+                                     (ExVar "x"), 
+                                     (ExNumber 5)
+                                    )
+                       )
+                      )
     
       
-  let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
-  let bad2 = ExApplication (test5, test3)
-  let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
-  let bad4 = ExOperation (OpEqual, test2, test3)
+let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
+let bad2 = ExApplication (test5, test3)
+let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
+let bad4 = ExOperation (OpEqual, test2, test3)
 
 let testIf = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10))
 let testOperation = ExOperation (OpPlus, (ExNumber 5), (ExNumber 10))
