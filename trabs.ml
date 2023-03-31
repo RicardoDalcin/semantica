@@ -116,7 +116,7 @@ let rec typeCheck (e:expr) gamma =
   | _                             -> None
   
 exception NoRuleApplies of string
-excpetion NotImplemented of string
+exception NotImplemented of string
 
 let rec eval (e: expr) gamma = 
   match e with
