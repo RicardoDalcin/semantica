@@ -621,4 +621,4 @@ let testFoo = ExLet ("x", Int, ExNumber 2,
                       ExLet ("foo", TyFun (Int, Int), ExFunction ("y", Int, ExOperation (OpPlus, ExVar("x"), ExVar("y"))), 
                           ExLet ("x", Int, ExNumber 5, ExApplication (ExVar "foo", ExNumber 10))))
                           
-let testFooEval = eval testFoo2 []
+let testFooEval = eval testFoo []
