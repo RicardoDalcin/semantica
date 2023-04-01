@@ -7,7 +7,6 @@ type typeL1 =
   | TyList of typeL1
   | TyPair of typeL1 * typeL1
   | TyMaybe of typeL1
-  | TyId of string
              
 type operator =
     OpPlus
@@ -305,6 +304,7 @@ let rec typeCheck (e:expr) gamma =
        | _ -> None
       )
   | _                             -> None
+;;
 
 exception NoRuleApplies of string
 exception NotImplemented of string
@@ -466,6 +466,31 @@ let rec exprToString (e: expr) : string =
   | ExMatchM (e1, e2, x, e3) -> "(match " ^ (exprToString e1) ^ " with nothing => " ^ (exprToString e2) ^ " | just " ^ x ^ " => " ^ (exprToString e3) ^ ")"
 ;;
 
+let rec testWellTyped (e: expr) =
+  let hashTable = (Hashtbl.create 1) in
+  let ty = typeCheck e hashTable in
+  (match (ty) with
+   | (Some ty1) -> 
+       (print_endline "Expressão bem tipada, com tipo:");
+       (print_endline (typeToString ty1));
+       true
+   | None -> 
+       (print_endline "Expressão mal tipada.");
+       false
+  )
+;;
+
+let rec runTest (e: expr) =
+  (print_endline "Expressão de entrada:");
+  (print_endline (exprToString e));
+  let wellTyped = testWellTyped e in
+  if(wellTyped)
+  then 
+    let value = eval e in
+    (print_endline "Expressão de saída:");
+    (print_endline (exprToString value));
+;;
+  
 let hashTable = (Hashtbl.create 1)
 let test1 = ExNil Bool
 let test2 = ExNumber 5
