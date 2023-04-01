@@ -529,16 +529,22 @@ let rec exprToString (e: expr) : string =
   | ExMatchM (e1, e2, x, e3) -> "(match " ^ (exprToString e1) ^ " with nothing => " ^ (exprToString e2) ^ " | just " ^ x ^ " => " ^ (exprToString e3) ^ ")"
 ;;
 
+(* Função que converte um contexto para uma string *)
+let rec contextToString (c: context) : string =
+  match c with
+  | [] -> "]"
+  | h :: t ->  ((fst h) ^ ": " ^ (valueToString (snd h)) ^ ", " ^ (contextToString t))
+and
 (* Função que converte um valor de L1 para uma string, com objetivo de tornar mais legível *)
-let rec valueToString (v: value) : string =
+  valueToString (v: value) : string =
   match v with
   | VNumber (x) -> string_of_int x
   | VBool (b) -> string_of_bool b
   | VNil (ty) -> "(nil: " ^ (typeToString ty) ^ ")"
   | VList (v1, v2) ->  (valueToString v1) ^ "::" ^ (valueToString v2)
   | VPair (v1, v2) -> "(" ^ (valueToString v1) ^ ", " ^ (valueToString v2) ^ ")"
-  | VClosure (x, tyF, e1, c) -> "(fn " ^ x ^ ": " ^ (typeToString tyF) ^ " => " ^ (exprToString e1) ^ ")"
-  | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, c) -> "(let rec " ^ x ^ ": " ^ (typeToString tyInF) ^ "->" ^ (typeToString tyOutF) ^ " = fn " ^ y ^ ": " ^ (typeToString ty1) ^ " => " ^ (exprToString e1) ^ " in " ^ (exprToString e2) ^ ")"
+  | VClosure (x, tyF, e1, c) -> "(fn " ^ x ^ ": " ^ (typeToString tyF) ^ " => " ^ (exprToString e1) ^ ") context = [" ^ (contextToString c)
+  | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, c) -> "(let rec " ^ x ^ ": " ^ (typeToString tyInF) ^ "->" ^ (typeToString tyOutF) ^ " = fn " ^ y ^ ": " ^ (typeToString ty1) ^ " => " ^ (exprToString e1) ^ " in " ^ (exprToString e2) ^ ") context = [" ^ (contextToString c)
   | VJust (v1) -> "(just " ^ (valueToString v1) ^ ")"
   | VNothing (ty) -> "(nothing: " ^ (typeToString ty) ^ ")"
 ;;
