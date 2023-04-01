@@ -111,7 +111,6 @@ let rec typeCheck (e:expr) gamma =
        | (_,_,_) -> None)
   | ExVar (x)                     ->
       (try
-         (* find x in gamma of type (string * typeL1) list *)
          Some (List.assoc x gamma)
        with Not_found ->
          None)
@@ -267,6 +266,17 @@ let rec typeCheck (e:expr) gamma =
              None
        | (None,_) -> None
        | (_,None) -> None)
+  | ExOperation (OpOr,e1,e2)    ->
+      let ty1 = typeCheck e1 gamma in
+      let ty2 = typeCheck e2 gamma in
+      (match (ty1,ty2) with
+        | (Some ty3, Some ty4) ->
+            if ty3 = Bool && ty4 = Bool then
+              Some Bool
+            else
+              None
+        | (None,_) -> None
+        | (_,None) -> None)
   | ExLet (x,tyF,e1,e2)   ->
       let ty1 = typeCheck e1 gamma in
       let ty2 = typeCheck e2 ((x, tyF)::gamma) in
@@ -360,7 +370,6 @@ let rec eval (e: expr) gamma =
        | VBool (false) -> eval e3 gamma
        | _ -> raise (NoRuleApplies "Eval error: if"))
   | ExVar (x) ->
-      (* search for x in gamma of type (string * value) list *)
       let rec search (x: string) (gamma: (string * value) list) = 
         (match gamma with
          | [] -> raise (NoRuleApplies ("Eval error: var " ^ x))
@@ -407,11 +416,9 @@ let rec eval (e: expr) gamma =
            let v3 = eval e1 gamma2 in
            v3
        | _ -> raise (NoRuleApplies "Eval error: application"))
-  (* function must bind the variables used in the body at declaration time *)
   | ExFunction (x, fTy, e1) ->
       VClosure (x, fTy, e1, gamma)
   | ExLet (x, tyF, e1, e2) ->
-      (* if e1 is a function, then it must bind the variables used in the body at declaration time *)
       (match e1 with
        | ExFunction (y, fTy, e1) ->
            let v1 = VClosure (y, fTy, e1, gamma) in
