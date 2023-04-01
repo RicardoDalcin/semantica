@@ -501,7 +501,8 @@ let rec runTest (e: expr) =
   let wellTyped = testWellTyped e in
   if(wellTyped)
   then 
-    let value = eval e in
+    let hashTable = (Hashtbl.create 1) in
+    let value = eval e hashTable in
     (print_endline "Expressão de saída:");
     (print_endline (exprToString value));
 ;;
