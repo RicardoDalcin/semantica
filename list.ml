@@ -330,8 +330,8 @@ let rec eval (e: expr) gamma =
       (* search for x in gamma of type (string * value) list *)
       let rec search (x: string) (gamma: (string * value) list) = 
         (match gamma with
-          | [] -> raise (NoRuleApplies ("Eval error: var " ^ x))
-          | (y,v)::tl -> if x = y then v else search x tl)
+         | [] -> raise (NoRuleApplies ("Eval error: var " ^ x))
+         | (y,v)::tl -> if x = y then v else search x tl)
       in
       search x gamma
   | ExOperation (op, e1, e2) ->
@@ -345,8 +345,8 @@ let rec eval (e: expr) gamma =
             | OpTimes -> VNumber (n1 * n2)
             | OpDiv ->
                 (match n2 with
-                | 0 -> raise (DivisionByZero "Eval error: div - division by zero is not allowed")
-                | _ -> VNumber (n1 / n2))
+                 | 0 -> raise (DivisionByZero "Eval error: div - division by zero is not allowed")
+                 | _ -> VNumber (n1 / n2))
             | OpGreater -> VBool (n1 > n2)
             | OpGorE -> VBool (n1 >= n2)
             | OpEqual -> VBool (n1 = n2)
@@ -363,17 +363,17 @@ let rec eval (e: expr) gamma =
   | ExApplication (e1, e2) ->
       let v1 = eval e1 gamma in
       let v2 = eval e2 gamma in
-        (match v1 with
-        | VClosure (x, fTy, e1, gamma1) ->
-            let gamma2 = (x, v2)::gamma1 in
-            let v3 = eval e1 gamma2 in
-            v3
-        | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) ->
-            let gamma1 = (x, v1)::gamma in
-            let gamma2 = (y, v2)::gamma1 in
-            let v3 = eval e1 gamma2 in
-            v3
-        | _ -> raise (NoRuleApplies "Eval error: application"))
+      (match v1 with
+       | VClosure (x, fTy, e1, gamma1) ->
+           let gamma2 = (x, v2)::gamma1 in
+           let v3 = eval e1 gamma2 in
+           v3
+       | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) ->
+           let gamma1 = (x, v1)::gamma in
+           let gamma2 = (y, v2)::gamma1 in
+           let v3 = eval e1 gamma2 in
+           v3
+       | _ -> raise (NoRuleApplies "Eval error: application"))
   (* function must bind the variables used in the body at declaration time *)
   | ExFunction (x, fTy, e1) ->
       VClosure (x, fTy, e1, gamma)
@@ -381,13 +381,13 @@ let rec eval (e: expr) gamma =
       (* if e1 is a function, then it must bind the variables used in the body at declaration time *)
       (match e1 with
        | ExFunction (y, fTy, e1) ->
-            let v1 = VClosure (y, fTy, e1, gamma) in
-            let v2 = eval e2 ((x, v1)::gamma) in
-            v2
+           let v1 = VClosure (y, fTy, e1, gamma) in
+           let v2 = eval e2 ((x, v1)::gamma) in
+           v2
        | _ ->
-          let v1 = eval e1 gamma in
-          let v2 = eval e2 ((x, v1)::gamma) in
-          v2)
+           let v1 = eval e1 gamma in
+           let v2 = eval e2 ((x, v1)::gamma) in
+           v2)
   | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) ->
       let closure = VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) in
       let v2 = eval e2 ((x, closure)::gamma) in
@@ -440,11 +440,11 @@ let rec eval (e: expr) gamma =
   | ExMatchM (e1, e2, x, e3) ->
       let v1 = eval e1 gamma in
       (match v1 with
-        | VNothing (ty) -> eval e2 gamma
-        | VJust (v1) ->
-            let v2 = eval e3 ((x, v1)::gamma) in
-            v2
-        | _ -> raise (NoRuleApplies "Eval error: matchM"))
+       | VNothing (ty) -> eval e2 gamma
+       | VJust (v1) ->
+           let v2 = eval e3 ((x, v1)::gamma) in
+           v2
+       | _ -> raise (NoRuleApplies "Eval error: matchM"))
 ;;
 
 let rec typeToString (ty: typeL1) : string =
@@ -494,9 +494,22 @@ let rec exprToString (e: expr) : string =
   | ExMatchM (e1, e2, x, e3) -> "(match " ^ (exprToString e1) ^ " with nothing => " ^ (exprToString e2) ^ " | just " ^ x ^ " => " ^ (exprToString e3) ^ ")"
 ;;
 
+let rec valueToString (v: value) : string =
+  match v with
+  | VNumber (x) -> string_of_int x
+  | VBool (b) -> string_of_bool b
+  | VNil (ty) -> "(nil: " ^ (typeToString ty) ^ ")"
+  | VList (v1, v2) ->  (valueToString v1) ^ "::" ^ (valueToString v2)
+  | VPair (v1, v2) -> "(" ^ (valueToString v1) ^ ", " ^ (valueToString v2) ^ ")"
+  | VClosure (x, tyF, e1, c) -> "(fn " ^ x ^ ": " ^ (typeToString tyF) ^ " => " ^ (exprToString e1) ^ ")"
+  | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, c) -> "(let rec " ^ x ^ ": " ^ (typeToString tyInF) ^ "->" ^ (typeToString tyOutF) ^ " = fn " ^ y ^ ": " ^ (typeToString ty1) ^ " => " ^ (exprToString e1) ^ " in " ^ (exprToString e2) ^ ")"
+  | VJust (v1) -> "(just " ^ (valueToString v1) ^ ")"
+  | VNothing (ty) -> "(nothing: " ^ (typeToString ty) ^ ")"
+;;
+
 let rec testWellTyped (e: expr) =
-  let hashTable = [] in
-  let ty = typeCheck e hashTable in
+  let context = [] in
+  let ty = typeCheck e context in
   (match (ty) with
    | (Some ty1) -> 
        (print_endline "Expressão bem tipada, com tipo:");
@@ -509,18 +522,19 @@ let rec testWellTyped (e: expr) =
 ;;
 
 let rec runTest (e: expr) =
+  (print_endline "-------------------------------");
   (print_endline "Expressão de entrada:");
   (print_endline (exprToString e));
   let wellTyped = testWellTyped e in
   if(wellTyped)
   then 
-    let hashTable = [] in
-    let value = eval e hashTable in
+    let context = [] in
+    let value = eval e context in
     (print_endline "Expressão de saída:");
-    (print_endline (exprToString value));
+    (print_endline (valueToString value));
+    (print_endline "-------------------------------");
 ;;
   
-let hashTable = []
 let test1 = ExNil Bool
 let test2 = ExNumber 5
 let test3 = ExBool true
@@ -589,41 +603,149 @@ let testBoolOperation1 = ExOperation (OpAnd, ExBool true, ExBool false)
 let testBoolOperation2 = ExOperation (OpOr, ExBool true, ExBool false)
 let testBoolOperation3 = ExOperation (OpEqual, ExBool false, ExBool false)
 
-let testEvalIf = eval testIf []
-let testEvalOperation = eval testOperation []
-let testEvalPair = eval testPair []
-let testEvalFst = eval testFst []
-let testEvalSnd = eval testSnd []
-let testEvalList = eval testList []
-let testEvalHd = eval testHd []
-let testEvalTl = eval testTl []
-let testEvalBoolOperation1 = eval testBoolOperation1 []
-let testEvalBoolOperation2 = eval testBoolOperation2 []
-let testEvalBoolOperation3 = eval testBoolOperation3 []
+(* TESTES DO PROFESSOR *)
+let tProf1 = ExFunction ("x", Int, ExOperation (OpPlus, ExVar "x", ExVar "y")) (* mal tipada - y não existe em gamma *)
+let tProf2 = ExApplication (ExApplication (ExFunction ("x", Int, ExFunction ("y", Int, ExOperation (OpPlus, ExVar "x", ExVar "y"))), ExNumber 3), ExNumber 4) (* int (7) *)
+let tProf3 = ExApplication (ExFunction ("x", Int, ExFunction ("y", Int, ExOperation (OpPlus, ExVar "x", ExVar "y"))), ExNumber 3) (* int -> int *)
+let tProf4 = ExFunction ("x", Int, ExFunction ("y", Int, ExOperation (OpPlus, ExVar "x", ExVar "y"))) (* int -> int -> int *)
+let tProf5 = ExLet ("x", Int, ExNumber 1, 
+                    ExLet ("y", Int, 
+                           ExOperation (OpPlus, ExNumber 9, ExVar "x"), 
+                           ExOperation (OpPlus, 
+                                        ExLet ("x", Int, ExNumber 2, 
+                                               ExOperation (OpTimes, ExVar "x", ExVar "y")), ExVar "x")))  (*  tipo int (21) *)
+let tProf6 = ExLet ("x", Bool, ExBool true, ExLet ("x", Int, ExNumber 10, ExVar "x")) (* tipo int (10) *)   
+let tProf8 = ExLetRec ("fat", 
+                       Int, 
+                       Int, 
+                       "x", 
+                       Int, 
+                       ExIf (ExOperation (OpEqual, ExVar "x", ExNumber 0), 
+                             ExNumber 1, 
+                             ExOperation (OpTimes, ExVar "x", 
+                                          ExApplication (ExVar "fat", ExOperation (OpMinus, ExVar "x", ExNumber 1)))),
+                       ExApplication (ExVar "fat", ExNumber 5)
+                      )  (* tipo int (120) *)
+let tProf9 = ExLetRec ("fat", 
+                       Int, 
+                       Int, 
+                       "x", 
+                       Int, 
+                       ExIf (ExOperation (OpEqual, ExVar "x", ExNumber 0), 
+                             ExNumber 1, 
+                             ExOperation (OpTimes, ExVar "x", 
+                                          ExApplication (ExVar "fat", ExOperation (OpMinus, ExVar "x", ExNumber 1)))),
+                       ExApplication (ExFunction ("f", TyFun (Int, Int), ExVar "f"), ExVar "fat")
+                      ) (* tipo int -> int *)
+let tProf11 = ExLetRec ("pow", 
+                        Int, 
+                        TyFun (Int, Int), 
+                        "x", 
+                        Int, 
+                        ExFunction ("y", Int, ExIf (ExOperation (OpEqual, ExVar "y", ExNumber 0), ExNumber 1, ExOperation (OpTimes, ExVar "x", ExApplication (ExApplication (ExVar "pow", ExVar "x"), ExOperation (OpMinus, ExVar "y", ExNumber 1))))),
+                        ExApplication (ExApplication (ExVar "pow", ExNumber 3), ExNumber 4)
+                       ) (* tipo int (81) *)
+let tProf12 = ExLetRec ("pow", 
+                        Int, 
+                        TyFun (Int, Int), 
+                        "x", 
+                        Int, 
+                        ExFunction ("y", Int, ExIf (ExOperation (OpEqual, ExVar "y", ExNumber 0), ExNumber 1, ExOperation (OpTimes, ExVar "x", ExApplication (ExApplication (ExVar "pow", ExVar "x"), ExOperation (OpMinus, ExVar "y", ExNumber 1))))),
+                        ExVar "pow"
+                       ) (* tipo int -> (int -> int) *)
+let tProf2_1 = ExLet ("x", 
+                      Int, 
+                      ExNumber 2, 
+                      ExLet ("foo", 
+                             TyFun (Int, Int), 
+                             ExFunction ("y", Int, ExOperation (OpPlus, ExVar("x"), ExVar("y"))), 
+                             ExLet ("x", 
+                                    Int, 
+                                    ExNumber 5, 
+                                    ExApplication (ExVar "foo", ExNumber 10)
+                                   )
+                            )
+                     ) (* tipo int (12) *)
+let tProf2_2 = ExLet ("x", 
+                      Int, 
+                      ExNumber 2, 
+                      ExLet ("foo", 
+                             TyFun (Int, Int), 
+                             ExFunction ("y", Int, ExOperation (OpPlus, ExVar("x"), ExVar("y"))), 
+                             ExLet ("x", 
+                                    Int, 
+                                    ExNumber 5,
+                                    ExVar "foo"
+                                   )
+                            )
+                     ) (* tipo int -> int *)
+let tProf2_3 = ExLetRec ("lookup",
+                         TyList (TyPair (Int, Int)),
+                         TyFun (Int, TyMaybe Int),
+                         "l",
+                         TyList (TyPair (Int, Int)),
+                         ExFunction ("key", Int, ExMatchL (ExVar "l", ExNothing Int, "x", "xs", ExIf (ExOperation (OpEqual, ExFst (ExVar "x"), ExVar "key"), ExJust (ExSnd (ExVar "x")), ExApplication (ExApplication (ExVar "lookup", ExVar "xs"), ExVar "key")))),
+                         ExApplication (ExApplication (ExVar "lookup", ExList (ExPair (ExNumber 1, ExNumber 10), ExList (ExPair (ExNumber 2, ExNumber 20), ExList (ExPair (ExNumber 3, ExNumber 30), ExNil (TyPair (Int, Int)))))), ExNumber 2)
+                        ) (* tipo maybe int (just 20) *)
+let tProf2_4 = ExLetRec ("map",
+                         TyFun (Int, Int),
+                         TyFun (TyList Int, TyList Int),
+                         "f",
+                         TyFun (Int, Int),
+                         ExFunction ("l", TyList Int, ExMatchL (ExVar "l",
+                                                                ExNil (TyList Int),
+                                                                "x",
+                                                                "xs",
+                                                                ExList (ExApplication (ExVar "f", ExVar "x"), ExApplication (ExApplication (ExVar "map", ExVar "f"), ExVar "xs"))
+                                                               )),
+                         ExApplication (ExApplication (ExVar "map", ExFunction ("x", Int, ExOperation (OpPlus, ExVar "x", ExVar "x"))), ExList (ExNumber 10, ExList (ExNumber 20, ExList (ExNumber 30, ExNil Int))))
+                        )
+;;
 
-let testEval1 = eval test1 []
-let testEval2 = eval test2 []
-let testEval3 = eval test3 []
-let testEval4 = eval test4 []
-let testEval5 = eval test5 []
-let testEval6 = eval test6 []
-let testEval7 = eval test7 []
-let testEval8 = eval test8 []
-let testEval9 = eval test9 []
-let testEval10 = eval test10 []
-let testEval11 = eval test11 []
-let testEval12 = eval test12 []
-let testEval13 = eval test13 []
-let testEval14 = eval test14 []
-let testEval15 = eval test15 []
-let testEval16 = eval test16 []
-let testEval17 = eval test17 []
-let testEval18 = eval test18 []
-let testEval19 = eval test19 []
-let testEval20 = eval test20 []
-
-let testFoo = ExLet ("x", Int, ExNumber 2, 
-                      ExLet ("foo", TyFun (Int, Int), ExFunction ("y", Int, ExOperation (OpPlus, ExVar("x"), ExVar("y"))), 
-                          ExLet ("x", Int, ExNumber 5, ExApplication (ExVar "foo", ExNumber 10))))
-                          
-let testFooEval = eval testFoo []
+List.iter runTest [
+  test1;
+  test2;
+  test3;
+  test4;
+  test5;
+  test6;
+  test7;
+  test8;
+  test9;
+  test10;
+  test11;
+  test12;
+  test13;
+  test14;
+  test15;
+  test16;
+  test17;
+  test18;
+  test19;
+  test20;
+  testIf;
+  testOperation;
+  testPair;
+  testFst;
+  testSnd;
+  testList;
+  testHd;
+  testTl;
+  testBoolOperation1;
+  testBoolOperation2;
+  testBoolOperation3;
+  tProf1;
+  tProf2;
+  tProf3;
+  tProf4;
+  tProf5;
+  tProf6;
+  tProf8;
+  tProf9;
+  tProf11;
+  tProf12;
+  tProf2_1;
+  tProf2_2;
+  tProf2_3;
+  tProf2_4
+]
