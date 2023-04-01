@@ -1,5 +1,31 @@
+(* 
+  Trabalho Final - Semântica Formal N - INF05516
+                    2022/2
+
+            Bernardo Beneduzi Borba
+            Ricardo Hermes Dalcin
+
+  Gramática Linguagem L1: 
+
+  e ∈ Expr
+
+  e ::= n | b | e1 op e2 | if e1 then e2 else e3
+  | x | e1 e2 | fn x : T ⇒ e | let x : T = e1 in e2
+  | let rec f : T1 → T2 = fn x : T1 ⇒ e1 in e2
+  | (e1, e2) | fst e | snd e
+  | nil : T | e1::e2 | hd e | tl e
+  | match e1 with nil ⇒ e2 | x::xs ⇒ e3
+  | just e | nothing : T
+  | match e1 with nothing ⇒ e2 | just x ⇒ e3
+
+  op ∈ {+, −, ∗, div, <, ≤, >, ≥, =, and, or}
+
+  T ::= int | bool | T1 → T2 | T list | T1 ∗ T2 | maybe T
+*)
+
 type var = string
 
+(* Tipos da linguagem L1 *)
 type typeL1 =
     Int
   | Bool
@@ -7,7 +33,8 @@ type typeL1 =
   | TyList of typeL1
   | TyPair of typeL1 * typeL1
   | TyMaybe of typeL1
-             
+    
+(* Conjunto op *)
 type operator =
     OpPlus
   | OpMinus
@@ -21,6 +48,7 @@ type operator =
   | OpAnd
   | OpOr
 
+(* Possíveis expressões da linguagem L1 *)
 type expr =
     ExBool of bool
   | ExNumber of int
@@ -43,6 +71,7 @@ type expr =
   | ExNothing of typeL1
   | ExMatchM of expr * expr * var * expr
 
+(* Valores da linguagem L1 *)
 type value =
   | VNumber of int
   | VBool of bool
@@ -56,6 +85,7 @@ type value =
 and
   context = (string * value) list
 
+(* Função que compara se dois tipos são iguais *)
 let rec compareType ty1 ty2 = match (ty1,ty2) with
   | TyList a, TyList b when a = b -> true
   | TyList a, TyList b when a<>b -> compareType a b
@@ -63,6 +93,7 @@ let rec compareType ty1 ty2 = match (ty1,ty2) with
   | _ -> false
 ;;
 
+(* Função que verifica a tipagem de uma dada expressão em determinado contexto gamma *)
 let rec typeCheck (e:expr) gamma =
   match e with
   | ExNil (ty)                    -> Some (TyList ty)
@@ -312,10 +343,12 @@ let rec typeCheck (e:expr) gamma =
   | _                             -> None
 ;;
 
+(* Exceções tratadas pelo avaliador Big-Step *)
 exception NoRuleApplies of string
 exception DivisionByZero of string
 exception EmptyListNotAllowed of string
 
+(* Avaliador Big-Step para linguagem L1 *)
 let rec eval (e: expr) gamma = 
   match e with
   | ExNumber (n) -> VNumber (n)
@@ -447,6 +480,7 @@ let rec eval (e: expr) gamma =
        | _ -> raise (NoRuleApplies "Eval error: matchM"))
 ;;
 
+(* Função que converte um tipo de L1 para uma string, com objetivo de tornar mais legível *)
 let rec typeToString (ty: typeL1) : string =
   match ty with
   | Int  -> "int"
@@ -457,6 +491,7 @@ let rec typeToString (ty: typeL1) : string =
   | TyMaybe a -> "maybe " ^ (typeToString a)
 ;;
 
+(* Função que converte uma expressão de L1 para uma string, com objetivo de tornar mais legível *)
 let rec exprToString (e: expr) : string =
   match e with
   | ExNumber (x) -> string_of_int x
@@ -494,6 +529,7 @@ let rec exprToString (e: expr) : string =
   | ExMatchM (e1, e2, x, e3) -> "(match " ^ (exprToString e1) ^ " with nothing => " ^ (exprToString e2) ^ " | just " ^ x ^ " => " ^ (exprToString e3) ^ ")"
 ;;
 
+(* Função que converte um valor de L1 para uma string, com objetivo de tornar mais legível *)
 let rec valueToString (v: value) : string =
   match v with
   | VNumber (x) -> string_of_int x
@@ -507,6 +543,7 @@ let rec valueToString (v: value) : string =
   | VNothing (ty) -> "(nothing: " ^ (typeToString ty) ^ ")"
 ;;
 
+(* Função que verifica se determinada expressão é bem tipada *)
 let rec testWellTyped (e: expr) =
   let context = [] in
   let ty = typeCheck e context in
@@ -521,6 +558,15 @@ let rec testWellTyped (e: expr) =
   )
 ;;
 
+(* 
+  Função usada para rodar os testes, verifica se a expressão é bem tipada e, se for, faz a sua avaliação 
+  Printa na tela:
+    - A expressão fornecida;
+    - Se é bem tipada ou não;
+    - Se for bem tipada:
+      - O seu tipo;
+      - O resultado da avaliação Big-Step.
+*)
 let rec runTest (e: expr) =
   (print_endline "-------------------------------");
   (print_endline "Expressão de entrada:");
@@ -534,7 +580,8 @@ let rec runTest (e: expr) =
     (print_endline (valueToString value));
     (print_endline "-------------------------------");
 ;;
-  
+
+(* Testes desenvolvidos *)
 let test1 = ExNil Bool
 let test2 = ExNumber 5
 let test3 = ExBool true
@@ -585,12 +632,6 @@ let test20 = ExMatchM ((ExJust (ExNumber 5)),
                        )
                       )
     
-      
-let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
-let bad2 = ExApplication (test5, test3)
-let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
-let bad4 = ExOperation (OpEqual, test2, test3)
-
 let testIf = ExIf ((ExBool true), (ExNumber 5), (ExNumber 10))
 let testOperation = ExOperation (OpPlus, (ExNumber 5), (ExNumber 10))
 let testPair = ExPair (testIf, (ExNumber 10))
@@ -603,7 +644,13 @@ let testBoolOperation1 = ExOperation (OpAnd, ExBool true, ExBool false)
 let testBoolOperation2 = ExOperation (OpOr, ExBool true, ExBool false)
 let testBoolOperation3 = ExOperation (OpEqual, ExBool false, ExBool false)
 
-(* TESTES DO PROFESSOR *)
+(* Testes de expressões mal tipadas *)
+let bad1 = ExIf ((ExBool true), (ExNumber 5), (ExBool false))
+let bad2 = ExApplication (test5, test3)
+let bad3 = ExList ((ExNumber 5), (ExList ((ExBool false), ExNil Int)))
+let bad4 = ExOperation (OpEqual, test2, test3)
+
+(* Testes fornecidos pelo professor *)
 let tProf1 = ExFunction ("x", Int, ExOperation (OpPlus, ExVar "x", ExVar "y")) (* mal tipada - y não existe em gamma *)
 let tProf2 = ExApplication (ExApplication (ExFunction ("x", Int, ExFunction ("y", Int, ExOperation (OpPlus, ExVar "x", ExVar "y"))), ExNumber 3), ExNumber 4) (* int (7) *)
 let tProf3 = ExApplication (ExFunction ("x", Int, ExFunction ("y", Int, ExOperation (OpPlus, ExVar "x", ExVar "y"))), ExNumber 3) (* int -> int *)
@@ -702,6 +749,7 @@ let tProf2_4 = ExLetRec ("map",
                         )
 ;;
 
+(* Iterador que roda todos os testes. *)
 List.iter runTest [
   test1;
   test2;
@@ -734,6 +782,10 @@ List.iter runTest [
   testBoolOperation1;
   testBoolOperation2;
   testBoolOperation3;
+  bad1;
+  bad2;
+  bad3;
+  bad4;
   tProf1;
   tProf2;
   tProf3;
