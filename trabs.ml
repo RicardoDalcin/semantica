@@ -335,9 +335,9 @@ let rec eval (e: expr) gamma =
             | OpMinus -> ExNumber (n1 - n2)
             | OpTimes -> ExNumber (n1 * n2)
             | OpDiv ->
-                match n2 with
+                (match n2 with
                 | 0 -> raise (NoRuleApplies "eval: div - division by zero is not allowed")
-                | _ -> ExNumber (n1 / n2)
+                | _ -> ExNumber (n1 / n2))
             | OpGreater -> ExBool (n1 > n2)
             | OpGorE -> ExBool (n1 >= n2)
             | OpEqual -> ExBool (n1 = n2)
