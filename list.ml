@@ -270,13 +270,13 @@ let rec typeCheck (e:expr) gamma =
       let ty1 = typeCheck e1 gamma in
       let ty2 = typeCheck e2 gamma in
       (match (ty1,ty2) with
-        | (Some ty3, Some ty4) ->
-            if ty3 = Bool && ty4 = Bool then
-              Some Bool
-            else
-              None
-        | (None,_) -> None
-        | (_,None) -> None)
+       | (Some ty3, Some ty4) ->
+           if ty3 = Bool && ty4 = Bool then
+             Some Bool
+           else
+             None
+       | (None,_) -> None
+       | (_,None) -> None)
   | ExLet (x,tyF,e1,e2)   ->
       let ty1 = typeCheck e1 gamma in
       let ty2 = typeCheck e2 ((x, tyF)::gamma) in
@@ -419,15 +419,9 @@ let rec eval (e: expr) gamma =
   | ExFunction (x, fTy, e1) ->
       VClosure (x, fTy, e1, gamma)
   | ExLet (x, tyF, e1, e2) ->
-      (match e1 with
-       | ExFunction (y, fTy, e1) ->
-           let v1 = VClosure (y, fTy, e1, gamma) in
-           let v2 = eval e2 ((x, v1)::gamma) in
-           v2
-       | _ ->
-           let v1 = eval e1 gamma in
-           let v2 = eval e2 ((x, v1)::gamma) in
-           v2)
+      let v1 = eval e1 gamma in
+      let v2 = eval e2 ((x, v1)::gamma) in
+      v2
   | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) ->
       let closure = VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) in
       let v2 = eval e2 ((x, closure)::gamma) in
