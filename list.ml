@@ -368,6 +368,11 @@ let rec eval (e: expr) gamma =
             let gamma2 = (x, v2)::gamma1 in
             let v3 = eval e1 gamma2 in
             v3
+        | VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) ->
+            let gamma1 = (x, v1)::gamma in
+            let gamma2 = (y, v2)::gamma1 in
+            let v3 = eval e1 gamma2 in
+            v3
         | _ -> raise (NoRuleApplies "Eval error: application"))
   (* function must bind the variables used in the body at declaration time *)
   | ExFunction (x, fTy, e1) ->
@@ -384,7 +389,7 @@ let rec eval (e: expr) gamma =
           let v2 = eval e2 ((x, v1)::gamma) in
           v2)
   | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) ->
-     let closure = VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) in
+      let closure = VRecClosure (x, tyInF, tyOutF, y, ty1, e1, e2, gamma) in
       let v2 = eval e2 ((x, closure)::gamma) in
       v2
   | ExPair (e1, e2) ->
