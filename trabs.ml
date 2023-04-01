@@ -350,8 +350,17 @@ let rec eval (e: expr) gamma =
        | _ -> raise (NoRuleApplies "eval: operation"))
   | ExApplication (e1, e2) -> raise (NotImplemented "eval: application")
   | ExFunction (x, fTy, e1) -> raise (NotImplemented "eval: function")
-  | ExLet (x, fTy, e1, e2) -> raise (NotImplemented "eval: let")
-  | ExLetRec (var1, ty1, ty2, var2, ty3, e1, e2) -> raise (NotImplemented "eval: letrec")
+  | ExLet (x, tyF, e1, e2) ->
+      let v1 = eval e1 gamma in
+      Hashtbl.add gamma x v1;
+      let v2 = eval e2 gamma in
+      Hashtbl.remove gamma x;
+      v2
+  | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) ->
+      Hashtbl.add gamma x (ExFunction (y, ty1, e1));
+      let v2 = eval e2 gamma in
+      Hashtbl.remove gamma x;
+      v2
   | ExPair (e1, e2) ->
       let v1 = eval e1 gamma in
       let v2 = eval e2 gamma in
@@ -382,10 +391,33 @@ let rec eval (e: expr) gamma =
       (match v with
        | ExList (v1, v2) -> v2
        | _ -> raise (NoRuleApplies "eval: tl"))
-  | ExMatchL (e1, e2, x, xs, e3) -> raise (NotImplemented "eval: matchL")
-  | ExJust (e) -> raise (NotImplemented "eval: just")
-  | ExNothing (ty) -> raise (NotImplemented "eval: nothing")
-  | ExMatchM (e1, e2, x, e3) -> raise (NotImplemented "eval: matchM")
+  | ExMatchL (e1, e2, x, xs, e3) -> 
+      let v1 = eval e1 gamma in
+      (match v1 with
+       | ExNil (ty) -> eval e2 gamma
+       | ExList (v1, v2) ->
+           Hashtbl.add gamma x v1;
+           Hashtbl.add gamma xs v2;
+           let v3 = eval e3 gamma in
+           Hashtbl.remove gamma x;
+           Hashtbl.remove gamma xs;
+           v3
+       | _ -> raise (NoRuleApplies "eval: matchL"))
+  | ExJust (e) ->
+      let v = eval e gamma in
+      ExJust (v)
+  | ExNothing (ty) ->
+      ExNothing (ty)
+  | ExMatchM (e1, e2, x, e3) ->
+      let v1 = eval e1 gamma in
+      (match v1 with
+        | ExNothing (ty) -> eval e2 gamma
+        | ExJust (v1) ->
+            Hashtbl.add gamma x v1;
+            let v2 = eval e3 gamma in
+            Hashtbl.remove gamma x;
+            v2
+        | _ -> raise (NoRuleApplies "eval: matchM"))
 
 let hashTable = (Hashtbl.create 1)
 let test1 = ExNil Bool
@@ -467,3 +499,24 @@ let testEvalTl = eval testTl (Hashtbl.create 1)
 let testEvalBoolOperation1 = eval testBoolOperation1 (Hashtbl.create 1)
 let testEvalBoolOperation2 = eval testBoolOperation2 (Hashtbl.create 1)
 let testEvalBoolOperation3 = eval testBoolOperation3 (Hashtbl.create 1)
+
+let testEval1 = eval test1 (Hashtbl.create 1)
+let testEval2 = eval test2 (Hashtbl.create 1)
+let testEval3 = eval test3 (Hashtbl.create 1)
+let testEval4 = eval test4 (Hashtbl.create 1)
+let testEval5 = eval test5 (Hashtbl.create 1)
+let testEval6 = eval test6 (Hashtbl.create 1)
+let testEval7 = eval test7 (Hashtbl.create 1)
+let testEval8 = eval test8 (Hashtbl.create 1)
+let testEval9 = eval test9 (Hashtbl.create 1)
+let testEval10 = eval test10 (Hashtbl.create 1)
+let testEval11 = eval test11 (Hashtbl.create 1)
+let testEval12 = eval test12 (Hashtbl.create 1)
+let testEval13 = eval test13 (Hashtbl.create 1)
+let testEval14 = eval test14 (Hashtbl.create 1)
+let testEval15 = eval test15 (Hashtbl.create 1)
+let testEval16 = eval test16 (Hashtbl.create 1)
+let testEval17 = eval test17 (Hashtbl.create 1)
+let testEval18 = eval test18 (Hashtbl.create 1)
+let testEval19 = eval test19 (Hashtbl.create 1)
+let testEval20 = eval test20 (Hashtbl.create 1)
