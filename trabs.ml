@@ -307,7 +307,8 @@ let rec typeCheck (e:expr) gamma =
 ;;
 
 exception NoRuleApplies of string
-exception NotImplemented of string
+exception DivisionByZero of string
+exception EmptyListNotAllowed of string
 
 let rec eval (e: expr) gamma = 
   match e with
@@ -318,12 +319,12 @@ let rec eval (e: expr) gamma =
       (match v1 with
        | ExBool (true) -> eval e2 gamma
        | ExBool (false) -> eval e3 gamma
-       | _ -> raise (NoRuleApplies "eval: if"))
+       | _ -> raise (NoRuleApplies "Eval error: if"))
   | ExVar (x) ->
       (try
          Hashtbl.find gamma x
        with Not_found ->
-         raise (NoRuleApplies "eval: var"))
+         raise (NoRuleApplies "Eval error: var"))
   
   | ExOperation (op, e1, e2) ->
       let v1 = eval e1 gamma in
@@ -336,21 +337,21 @@ let rec eval (e: expr) gamma =
             | OpTimes -> ExNumber (n1 * n2)
             | OpDiv ->
                 (match n2 with
-                | 0 -> raise (NoRuleApplies "eval: div - division by zero is not allowed")
+                | 0 -> raise (DivisionByZero "Eval error: div - division by zero is not allowed")
                 | _ -> ExNumber (n1 / n2))
             | OpGreater -> ExBool (n1 > n2)
             | OpGorE -> ExBool (n1 >= n2)
             | OpEqual -> ExBool (n1 = n2)
             | OpLorE -> ExBool (n1 <= n2)
             | OpLess -> ExBool (n1 < n2)
-            | _ -> raise (NoRuleApplies "eval: operation"))
+            | _ -> raise (NoRuleApplies "Eval error: operation"))
        | (ExBool (b1), ExBool (b2)) ->
            (match op with
             | OpAnd -> ExBool (b1 && b2)
             | OpOr -> ExBool (b1 || b2)
             | OpEqual -> ExBool (b1 = b2)
-            | _ -> raise (NoRuleApplies "eval: operation"))
-       | _ -> raise (NoRuleApplies "eval: operation"))
+            | _ -> raise (NoRuleApplies "Eval error: operation"))
+       | _ -> raise (NoRuleApplies "Eval error: operation"))
   | ExApplication (e1, e2) ->
       let v1 = eval e1 gamma in
       let v2 = eval e2 gamma in
@@ -360,7 +361,7 @@ let rec eval (e: expr) gamma =
            let v3 = eval e1 gamma in
            Hashtbl.remove gamma x;
            v3
-       | _ -> raise (NoRuleApplies "eval: application"))
+       | _ -> raise (NoRuleApplies "Eval error: application"))
   | ExFunction (x, fTy, e1) ->
       ExFunction (x, fTy, e1)
   | ExLet (x, tyF, e1, e2) ->
@@ -382,12 +383,12 @@ let rec eval (e: expr) gamma =
       let v = eval e gamma in
       (match v with
        | ExPair (v1, v2) -> v1
-       | _ -> raise (NoRuleApplies "eval: fst"))
+       | _ -> raise (NoRuleApplies "Eval error: fst"))
   | ExSnd (e) ->
       let v = eval e gamma in
       (match v with
        | ExPair (v1, v2) -> v2
-       | _ -> raise (NoRuleApplies "eval: snd"))
+       | _ -> raise (NoRuleApplies "Eval error: snd"))
   | ExNil (ty) ->
       ExNil (ty)
   | ExList (e1, e2) -> 
@@ -397,15 +398,15 @@ let rec eval (e: expr) gamma =
   | ExHd (e) ->
       let v = eval e gamma in
       (match v with
-       | ExNil (ty) -> raise (NoRuleApplies "eval: hd - empty list")
+       | ExNil (ty) -> raise (EmptyListNotAllowed "Eval error: hd - empty list")
        | ExList (v1, v2) -> v1
-       | _ -> raise (NoRuleApplies "eval: hd"))
+       | _ -> raise (NoRuleApplies "Eval error: hd"))
   | ExTl (e) -> 
       let v = eval e gamma in
       (match v with
-       | ExNil (ty) -> raise (NoRuleApplies "eval: hd - empty list")
+       | ExNil (ty) -> raise (EmptyListNotAllowed "Eval error: hd - empty list")
        | ExList (v1, v2) -> v2
-       | _ -> raise (NoRuleApplies "eval: tl"))
+       | _ -> raise (NoRuleApplies "Eval error: tl"))
   | ExMatchL (e1, e2, x, xs, e3) -> 
       let v1 = eval e1 gamma in
       (match v1 with
@@ -417,7 +418,7 @@ let rec eval (e: expr) gamma =
            Hashtbl.remove gamma x;
            Hashtbl.remove gamma xs;
            v3
-       | _ -> raise (NoRuleApplies "eval: matchL"))
+       | _ -> raise (NoRuleApplies "Eval error: matchL"))
   | ExJust (e) ->
       let v = eval e gamma in
       ExJust (v)
@@ -432,7 +433,7 @@ let rec eval (e: expr) gamma =
             let v2 = eval e3 gamma in
             Hashtbl.remove gamma x;
             v2
-        | _ -> raise (NoRuleApplies "eval: matchM"))
+        | _ -> raise (NoRuleApplies "Eval error: matchM"))
 
 let rec typeToString (ty: typeL1) : string =
   match ty with
