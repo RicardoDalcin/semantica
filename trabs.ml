@@ -419,6 +419,53 @@ let rec eval (e: expr) gamma =
             v2
         | _ -> raise (NoRuleApplies "eval: matchM"))
 
+let rec typeToString (ty: typeL1) : string =
+  match ty with
+  | Int  -> "int"
+  | Bool -> "bool"
+  | TyFun (tp1,tp2) -> "(" ^ (typeToString tp1) ^ " -> " ^ (typeToString tp2) ^ ")"
+  | TyList a -> (typeToString a) ^ " list"
+  | TyPair (tp1,tp2) -> "(" ^ (typeToString tp1) ^ " * " ^ (typeToString tp2) ^ ")"
+  | TyMaybe a -> "maybe " ^ (typeToString a)
+;;
+
+let rec exprToString (e: expr) : string =
+  match e with
+  | ExNumber (x) -> string_of_int x
+  | ExBool (b) -> string_of_bool b
+  | ExIf (e1,e2,e3) -> "(if " ^ (exprToString e1) ^ " then " ^ (exprToString e2) ^ " else " ^ (exprToString e3) ^ ")"
+  | ExVar (x) -> x
+  | ExOperation (op, e1, e2) -> 
+      (match (op, e1, e2) with
+       | (OpPlus, e3, e4) -> "(" ^ (exprToString e3) ^ " + " ^ (exprToString e4) ^ ")"
+       | (OpMinus, e3, e4) -> "(" ^ (exprToString e3) ^ " - " ^ (exprToString e4) ^ ")"
+       | (OpTimes, e3, e4) -> "(" ^ (exprToString e3) ^ " * " ^ (exprToString e4) ^ ")"
+       | (OpDiv, e3, e4) -> "(" ^ (exprToString e3) ^ " div " ^ (exprToString e4) ^ ")"
+       | (OpGreater, e3, e4) -> "(" ^ (exprToString e3) ^ " > " ^ (exprToString e4) ^ ")"
+       | (OpGorE, e3, e4) -> "(" ^ (exprToString e3) ^ " >= " ^ (exprToString e4) ^ ")"
+       | (OpEqual, e3, e4) -> "(" ^ (exprToString e3) ^ " = " ^ (exprToString e4) ^ ")"
+       | (OpLorE, e3, e4) -> "(" ^ (exprToString e3) ^ " <= " ^ (exprToString e4) ^ ")"
+       | (OpLess, e3, e4) -> "(" ^ (exprToString e3) ^ " < " ^ (exprToString e4) ^ ")"
+       | (OpAnd, e3, e4) -> "(" ^ (exprToString e3) ^ " and " ^ (exprToString e4) ^ ")"
+       | (OpOr, e3, e4) -> "(" ^ (exprToString e3) ^ " or " ^ (exprToString e4) ^ ")"
+      )
+  | ExApplication (e1, e2) -> "(" ^ (exprToString e1) ^ " " ^ (exprToString e2) ^ ")"
+  | ExFunction (x, tyF, e1) -> "(fn " ^ x ^ ": " ^ (typeToString tyF) ^ " => " ^ (exprToString e1) ^ ")"
+  | ExLet (x, tyF, e1, e2) -> "(let " ^ x ^ ": " ^ (typeToString tyF) ^ " = " ^ (exprToString e1) ^ " in " ^ (exprToString e2) ^ ")"
+  | ExLetRec (x, tyInF, tyOutF, y, ty1, e1, e2) -> "(let rec " ^ x ^ ": " ^ (typeToString tyInF) ^ "->" ^ (typeToString tyOutF) ^ " = fn " ^ y ^ ": " ^ (typeToString ty1) ^ " => " ^ (exprToString e1) ^ " in " ^ (exprToString e2) ^ ")"
+  | ExPair (e1, e2) -> "(" ^ (exprToString e1) ^ ", " ^ (exprToString e2) ^ ")"
+  | ExFst (e1) -> "(fst " ^ (exprToString e1) ^ ")"
+  | ExSnd (e1) -> "(snd " ^ (exprToString e1) ^ ")"
+  | ExNil (ty) -> "(nil: " ^ (typeToString ty) ^ ")"
+  | ExList (e1, e2) ->  (exprToString e1) ^ "::" ^ (exprToString e2)
+  | ExHd (e1) -> "(hd " ^ (exprToString e1) ^ ")"
+  | ExTl (e1) -> "(tl " ^ (exprToString e1) ^ ")"
+  | ExMatchL (e1, e2, x, xs, e3) -> "(match " ^ (exprToString e1) ^ " with nil => " ^ (exprToString e2) ^ " | " ^ x ^ "::" ^ xs ^ " => " ^ (exprToString e3) ^ ")" 
+  | ExJust (e1) -> "(just " ^ (exprToString e1) ^ ")"
+  | ExNothing (ty) -> "(nothing: " ^ (typeToString ty) ^ ")"
+  | ExMatchM (e1, e2, x, e3) -> "(match " ^ (exprToString e1) ^ " with nothing => " ^ (exprToString e2) ^ " | just " ^ x ^ " => " ^ (exprToString e3) ^ ")"
+;;
+
 let hashTable = (Hashtbl.create 1)
 let test1 = ExNil Bool
 let test2 = ExNumber 5
