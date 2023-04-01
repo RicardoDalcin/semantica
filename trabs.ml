@@ -334,7 +334,10 @@ let rec eval (e: expr) gamma =
             | OpPlus -> ExNumber (n1 + n2)
             | OpMinus -> ExNumber (n1 - n2)
             | OpTimes -> ExNumber (n1 * n2)
-            | OpDiv -> ExNumber (n1 / n2)
+            | OpDiv ->
+                match n2 with
+                | 0 -> raise (NoRuleApplies "eval: div - division by zero is not allowed")
+                | _ -> ExNumber (n1 / n2)
             | OpGreater -> ExBool (n1 > n2)
             | OpGorE -> ExBool (n1 >= n2)
             | OpEqual -> ExBool (n1 = n2)
@@ -348,8 +351,18 @@ let rec eval (e: expr) gamma =
             | OpEqual -> ExBool (b1 = b2)
             | _ -> raise (NoRuleApplies "eval: operation"))
        | _ -> raise (NoRuleApplies "eval: operation"))
-  | ExApplication (e1, e2) -> raise (NotImplemented "eval: application")
-  | ExFunction (x, fTy, e1) -> raise (NotImplemented "eval: function")
+  | ExApplication (e1, e2) ->
+      let v1 = eval e1 gamma in
+      let v2 = eval e2 gamma in
+      (match v1 with
+       | ExFunction (x, fTy, e1) ->
+           Hashtbl.add gamma x v2;
+           let v3 = eval e1 gamma in
+           Hashtbl.remove gamma x;
+           v3
+       | _ -> raise (NoRuleApplies "eval: application"))
+  | ExFunction (x, fTy, e1) ->
+      ExFunction (x, fTy, e1)
   | ExLet (x, tyF, e1, e2) ->
       let v1 = eval e1 gamma in
       Hashtbl.add gamma x v1;
@@ -384,11 +397,13 @@ let rec eval (e: expr) gamma =
   | ExHd (e) ->
       let v = eval e gamma in
       (match v with
+       | ExNil (ty) -> raise (NoRuleApplies "eval: hd - empty list")
        | ExList (v1, v2) -> v1
        | _ -> raise (NoRuleApplies "eval: hd"))
   | ExTl (e) -> 
       let v = eval e gamma in
       (match v with
+       | ExNil (ty) -> raise (NoRuleApplies "eval: hd - empty list")
        | ExList (v1, v2) -> v2
        | _ -> raise (NoRuleApplies "eval: tl"))
   | ExMatchL (e1, e2, x, xs, e3) -> 
