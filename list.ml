@@ -693,7 +693,7 @@ let tProf2_4 = ExLetRec ("map",
                          "f",
                          TyFun (Int, Int),
                          ExFunction ("l", TyList Int, ExMatchL (ExVar "l",
-                                                                ExNil (TyList Int),
+                                                                ExNil Int,
                                                                 "x",
                                                                 "xs",
                                                                 ExList (ExApplication (ExVar "f", ExVar "x"), ExApplication (ExApplication (ExVar "map", ExVar "f"), ExVar "xs"))
@@ -749,3 +749,5 @@ List.iter runTest [
   tProf2_3;
   tProf2_4
 ]
+
+
